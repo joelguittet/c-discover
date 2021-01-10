@@ -1,0 +1,6 @@
+[submodule "lib/cJSON"]
+	path = lib/cJSON
+	url = https://github.com/DaveGamble/cJSON.git
+[submodule "lib/uuid4"]
+	path = lib/uuid4
+	url = https://github.com/gpakosz/uuid4.git
