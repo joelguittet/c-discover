@@ -587,7 +587,8 @@ static void *sock_thread_sender(void *arg) {
     /* Unicast */
     char *unicast = strdup(sock->options.unicast);
     if (NULL != unicast) {
-      char *pch = strtok(unicast, ",");
+      char *saveptr = NULL;
+      const char *pch = strtok_r(unicast, ",", &saveptr);
       while (NULL != pch) {
         struct sockaddr_in addr;
         addr.sin_family = AF_INET;
@@ -600,7 +601,7 @@ static void *sock_thread_sender(void *arg) {
             }
           }
         }
-        pch = strtok(NULL, ",");
+        pch = strtok_r(NULL, ",", &saveptr);
       }
       free(unicast);
     }
