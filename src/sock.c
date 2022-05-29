@@ -111,7 +111,7 @@ sock_t *sock_create(void) {
  * @param unicast Unicast addresses, separated by a comma
  * @return 0 if the function succeeded, -1 otherwise
  */
-int sock_bind_unicast(sock_t *sock, char *address, uint16_t port, bool reuse_addr, char *unicast) {
+int sock_bind_unicast(sock_t *sock, const char *address, uint16_t port, bool reuse_addr, const char *unicast) {
   
   assert(NULL != sock);
   assert(NULL != address);
@@ -160,7 +160,7 @@ int sock_bind_unicast(sock_t *sock, char *address, uint16_t port, bool reuse_add
  * @param multicast_ttl Multicast TTL value
  * @return 0 if the function succeeded, -1 otherwise
  */
-int sock_bind_multicast(sock_t *sock, char *address, uint16_t port, bool reuse_addr, char *multicast, unsigned char multicast_ttl) {
+int sock_bind_multicast(sock_t *sock, const char *address, uint16_t port, bool reuse_addr, const char *multicast, unsigned char multicast_ttl) {
   
   assert(NULL != sock);
   assert(NULL != address);
@@ -209,7 +209,7 @@ int sock_bind_multicast(sock_t *sock, char *address, uint16_t port, bool reuse_a
  * @param broadcast Broadcast address
  * @return 0 if the function succeeded, -1 otherwise
  */
-int sock_bind_broadcast(sock_t *sock, char *address, uint16_t port, bool reuse_addr, char *broadcast) {
+int sock_bind_broadcast(sock_t *sock, const char *address, uint16_t port, bool reuse_addr, const char *broadcast) {
   
   assert(NULL != sock);
   assert(NULL != address);
@@ -256,7 +256,7 @@ int sock_bind_broadcast(sock_t *sock, char *address, uint16_t port, bool reuse_a
  * @param user User data
  * @return 0 if the function succeeded, -1 otherwise
  */
-int sock_on(sock_t *sock, char *topic, void *fct, void *user) {
+int sock_on(sock_t *sock, const char *topic, void *fct, void *user) {
   
   assert(NULL != sock);
   assert(NULL != topic);
