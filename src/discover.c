@@ -64,7 +64,7 @@ static void *discover_thread_check(void *arg);
  * @param size Size of data received
  * @param user User data
  */
-static void discover_message_cb(sock_t * sock, char *ip, uint16_t port, void *buffer, size_t size, void *user);
+static void discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t size, void *user);
 
 /**
  * @brief Callback function called to handle error from sock instance
@@ -72,7 +72,7 @@ static void discover_message_cb(sock_t * sock, char *ip, uint16_t port, void *bu
  * @param err Error as string
  * @param user User data
  */
-static void discover_error_cb(sock_t * sock, char *err, void *user);
+static void discover_error_cb(sock_t *sock, char *err, void *user);
 
 /**
  * @brief Generate UUID V4
@@ -966,7 +966,7 @@ static void *discover_thread_check(void *arg) {
  * @param size Size of data received
  * @param user User data
  */
-static void discover_message_cb(sock_t * sock, char *ip, uint16_t port, void *buffer, size_t size, void *user) {
+static void discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t size, void *user) {
   
   (void)sock;
   assert(NULL != ip);
@@ -1199,10 +1199,9 @@ END:
  * @param err Error as string
  * @param user User data
  */
-static void discover_error_cb(sock_t * sock, char *err, void *user) {
+static void discover_error_cb(sock_t *sock, char *err, void *user) {
 
   (void)sock;
-  assert(NULL != sock);
   assert(NULL != err);
   assert(NULL != user);
   
