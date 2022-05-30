@@ -641,8 +641,10 @@ void discover_release(discover_t *discover) {
     sock_release(discover->sock);
     
     /* Stop hello thread */
-    pthread_cancel(discover->thread_hello);
-    pthread_join(discover->thread_hello, NULL);
+    if (false == discover->options.client) {
+      pthread_cancel(discover->thread_hello);
+      pthread_join(discover->thread_hello, NULL);
+    }
     
     /* Stop check thread */
     pthread_cancel(discover->thread_check);
