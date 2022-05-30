@@ -64,7 +64,7 @@ static void *discover_thread_check(void *arg);
  * @param size Size of data received
  * @param user User data
  */
-static void discover_message_cb(const sock_t *sock, const char *ip, uint16_t port, const void *buffer, size_t size, void *user);
+static void discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t size, void *user);
 
 /**
  * @brief Callback function called to handle error from sock instance
@@ -72,7 +72,7 @@ static void discover_message_cb(const sock_t *sock, const char *ip, uint16_t por
  * @param err Error as string
  * @param user User data
  */
-static void discover_error_cb(const sock_t *sock, char *err, void *user);
+static void discover_error_cb(sock_t *sock, char *err, void *user);
 
 /**
  * @brief Generate UUID V4
@@ -215,7 +215,7 @@ discover_t *discover_create(void) {
  * @param value New value of the option
  * @return 0 if the function succeeded, -1 otherwise
  */
-int discover_set_option(discover_t *discover, const char *option, void *value) {
+int discover_set_option(discover_t *discover, char *option, void *value) {
   
   assert(NULL != discover);
   assert(NULL != option);
@@ -385,7 +385,7 @@ int discover_start(discover_t *discover) {
  * @param user User data
  * @return 0 if the function succeeded, -1 otherwise
  */
-int discover_on(discover_t *discover, const char *topic, void *fct, void *user) {
+int discover_on(discover_t *discover, char *topic, void *fct, void *user) {
   
   assert(NULL != discover);
   assert(NULL != topic);
@@ -429,7 +429,7 @@ int discover_on(discover_t *discover, const char *topic, void *fct, void *user) 
  * @param advertisement Advestisement object
  * @return 0 if the function succeeded, -1 otherwise
  */
-int discover_advertise(discover_t *discover, const cJSON *advertisement) {
+int discover_advertise(discover_t *discover, cJSON *advertisement) {
   
   assert(NULL != discover);
   
@@ -487,7 +487,7 @@ int discover_demote(discover_t *discover, bool permanent) {
  * @param user User data
  * @return 0 if the function succeeded, -1 otherwise
  */
-int discover_join(discover_t *discover, const char *event, void *fct, void *user) {
+int discover_join(discover_t *discover, char *event, void *fct, void *user) {
   
   assert(NULL != discover);
   assert(NULL != event);
@@ -547,7 +547,7 @@ LEAVE:
  * @param event Event
  * @return 0 if the function succeeded, -1 otherwise
  */
-int discover_leave(discover_t *discover, const char *event) {
+int discover_leave(discover_t *discover, char *event) {
   
   assert(NULL != discover);
   assert(NULL != event);
@@ -589,7 +589,7 @@ LEAVE:
  * @param data Data to send
  * @return 0 if the function succeeded, -1 otherwise
  */
-int discover_send(discover_t *discover, const char* event, const cJSON *data) {
+int discover_send(discover_t *discover, char* event, cJSON *data) {
   
   assert(NULL != discover);
   assert(NULL != event);
@@ -966,7 +966,7 @@ static void *discover_thread_check(void *arg) {
  * @param size Size of data received
  * @param user User data
  */
-static void discover_message_cb(const sock_t *sock, const char *ip, uint16_t port, const void *buffer, size_t size, void *user) {
+static void discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t size, void *user) {
   
   (void)sock;
   assert(NULL != ip);
@@ -988,7 +988,7 @@ static void discover_message_cb(const sock_t *sock, const char *ip, uint16_t por
   sem_wait(&discover->options.sem);
 
   /* Check Process UUID */
-  const cJSON *pid = cJSON_GetObjectItemCaseSensitive(json, "pid");
+  cJSON *pid = cJSON_GetObjectItemCaseSensitive(json, "pid");
   if ((NULL == pid) || (!cJSON_IsString(pid))) {
     /* No Process UUID, ignore message */
     sem_post(&discover->options.sem);
@@ -1002,7 +1002,7 @@ static void discover_message_cb(const sock_t *sock, const char *ip, uint16_t por
   }
 
   /* Check Instance UUID */
-  const cJSON *iid = cJSON_GetObjectItemCaseSensitive(json, "iid");
+  cJSON *iid = cJSON_GetObjectItemCaseSensitive(json, "iid");
   if ((NULL == iid) || (!cJSON_IsString(iid))) {
     /* No Instance UUID, ignore message */
     sem_post(&discover->options.sem);
@@ -1019,45 +1019,45 @@ static void discover_message_cb(const sock_t *sock, const char *ip, uint16_t por
   sem_post(&discover->options.sem);
   
   /* Retrieve event */
-  const cJSON *event = cJSON_GetObjectItemCaseSensitive(json, "event");
+  cJSON *event = cJSON_GetObjectItemCaseSensitive(json, "event");
   if ((NULL != event) && (cJSON_IsString(event))) {
     
     /* Treatment depending of the event type */
     if (!strcmp(cJSON_GetStringValue(event), "hello")) {
 
       /* Hello event, retrieve data */
-      const cJSON *data = cJSON_GetObjectItemCaseSensitive(json, "data");
+      cJSON *data = cJSON_GetObjectItemCaseSensitive(json, "data");
       if ((NULL != data) && (cJSON_IsObject(data))) {
 
         /* Retrieve event fields */
-        const cJSON *hostname = cJSON_GetObjectItemCaseSensitive(json, "hostName");
+        cJSON *hostname = cJSON_GetObjectItemCaseSensitive(json, "hostName");
         if ((NULL == hostname) || (!cJSON_IsString(hostname))) {
           /* Invalid message, ignore */
           goto END;
         }
         
         /* Retrieve data fields */
-        const cJSON *is_master = cJSON_GetObjectItemCaseSensitive(data, "isMaster");
+        cJSON *is_master = cJSON_GetObjectItemCaseSensitive(data, "isMaster");
         if ((NULL == is_master) || (!cJSON_IsBool(is_master))) {
           /* Invalid message, ignore */
           goto END;
         }
-        const cJSON *is_master_eligible = cJSON_GetObjectItemCaseSensitive(data, "isMasterEligible");
+        cJSON *is_master_eligible = cJSON_GetObjectItemCaseSensitive(data, "isMasterEligible");
         if ((NULL == is_master_eligible) || (!cJSON_IsBool(is_master_eligible))) {
           /* Invalid message, ignore */
           goto END;
         }
-        const cJSON *weight = cJSON_GetObjectItemCaseSensitive(data, "weight");
+        cJSON *weight = cJSON_GetObjectItemCaseSensitive(data, "weight");
         if ((NULL == weight) || (!cJSON_IsNumber(weight))) {
           /* Invalid message, ignore */
           goto END;
         }
-        const cJSON *address = cJSON_GetObjectItemCaseSensitive(data, "address");
+        cJSON *address = cJSON_GetObjectItemCaseSensitive(data, "address");
         if ((NULL == address) || (!cJSON_IsString(address))) {
           /* Invalid message, ignore */
           goto END;
         }
-        const cJSON *advertisement = cJSON_GetObjectItemCaseSensitive(data, "advertisement");
+        cJSON *advertisement = cJSON_GetObjectItemCaseSensitive(data, "advertisement");
 
         /* Flags */
         bool is_new = false; bool was_master = false;
@@ -1199,7 +1199,7 @@ END:
  * @param err Error as string
  * @param user User data
  */
-static void discover_error_cb(const sock_t *sock, char *err, void *user) {
+static void discover_error_cb(sock_t *sock, char *err, void *user) {
 
   (void)sock;
   assert(NULL != err);

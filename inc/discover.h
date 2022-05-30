@@ -204,7 +204,7 @@ DISCOVER_PUBLIC(discover_t *) discover_create(void);
  * @param value New value of the option
  * @return 0 if the function succeeded, -1 otherwise
  */
-DISCOVER_PUBLIC(int) discover_set_option(discover_t *discover, const char *option, void *value);
+DISCOVER_PUBLIC(int) discover_set_option(discover_t *discover, char *option, void *value);
 
 /**
  * @brief Start discovering
@@ -221,7 +221,7 @@ DISCOVER_PUBLIC(int) discover_start(discover_t *discover);
  * @param user User data
  * @return 0 if the function succeeded, -1 otherwise
  */
-DISCOVER_PUBLIC(int) discover_on(discover_t *discover, const char *topic, void *fct, void *user);
+DISCOVER_PUBLIC(int) discover_on(discover_t *discover, char *topic, void *fct, void *user);
 
 /**
  * @brief Function used to set advertisement
@@ -229,7 +229,7 @@ DISCOVER_PUBLIC(int) discover_on(discover_t *discover, const char *topic, void *
  * @param advertisement Advestisement object
  * @return 0 if the function succeeded, -1 otherwise
  */
-DISCOVER_PUBLIC(int) discover_advertise(discover_t *discover, const cJSON *advertisement);
+DISCOVER_PUBLIC(int) discover_advertise(discover_t *discover, cJSON *advertisement);
 
 /**
  * @brief Promote the instance to master
@@ -254,7 +254,7 @@ DISCOVER_PUBLIC(int) discover_demote(discover_t *discover, bool permanent);
  * @param user User data
  * @return 0 if the function succeeded, -1 otherwise
  */
-DISCOVER_PUBLIC(int) discover_join(discover_t *discover, const char *event, void *fct, void *user);
+DISCOVER_PUBLIC(int) discover_join(discover_t *discover, char *event, void *fct, void *user);
 
 /**
  * @brief Leave channel
@@ -262,7 +262,7 @@ DISCOVER_PUBLIC(int) discover_join(discover_t *discover, const char *event, void
  * @param event Event
  * @return 0 if the function succeeded, -1 otherwise
  */
-DISCOVER_PUBLIC(int) discover_leave(discover_t *discover, const char *event);
+DISCOVER_PUBLIC(int) discover_leave(discover_t *discover, char *event);
 
 /**
  * @brief Function used to send event data
@@ -271,7 +271,7 @@ DISCOVER_PUBLIC(int) discover_leave(discover_t *discover, const char *event);
  * @param data Data to send
  * @return 0 if the function succeeded, -1 otherwise
  */
-DISCOVER_PUBLIC(int) discover_send(discover_t *discover, const char* event, const cJSON *data);
+DISCOVER_PUBLIC(int) discover_send(discover_t *discover, char* event, cJSON *data);
 
 /**
  * @brief Release discover instance
