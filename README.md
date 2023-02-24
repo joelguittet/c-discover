@@ -1,6 +1,6 @@
 # c-discover
 
-[![CMake Badge](https://github.com/joelguittet/c-discover/workflows/CMake%20+%20SonarCloud%20Analysis/badge.svg)](https://github.com/joelguittet/c-discover/actions)
+[![CI Badge](https://github.com/joelguittet/c-discover/workflows/ci/badge.svg)](https://github.com/joelguittet/c-discover/actions)
 [![Issues Badge](https://img.shields.io/github/issues/joelguittet/c-discover)](https://github.com/joelguittet/c-discover/issues)
 [![License Badge](https://img.shields.io/github/license/joelguittet/c-discover)](https://github.com/joelguittet/c-discover/blob/master/LICENSE)
 
@@ -30,8 +30,19 @@ This repository is not a fork of [discover](https://github.com/wankdanker/node-d
 Build `libdiscover.so` with the following commands:
 
 ``` bash
-cmake .
+mkdir build
+cd build
+cmake ..
 make
+```
+
+
+## Installing
+
+Install `libdiscover.so` with the following commands:
+
+``` bash
+make install
 ```
 
 ## Compatibility
@@ -40,10 +51,10 @@ This library is compatible with [discover](https://github.com/wankdanker/node-di
 
 ## Examples
 
-Several examples are available in the `examples\` directory.
-
 Build examples with the following commands:
 ``` bash
+mkdir build
+cd build
 cmake -DENABLE_DISCOVER_EXAMPLES=ON .
 make
 ```
