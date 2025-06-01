@@ -28,19 +28,17 @@ This repository is not a fork of [discover](https://github.com/wankdanker/node-d
 
 ## Building
 
-Build `libdiscover.so` with the following commands:
+On Linux/Windows build `libdiscover.so`/`libdiscover.dll` with the following commands:
 
 ``` bash
-mkdir build
-cd build
-cmake ..
-make
+cmake -B build .
+cmake --build build
 ```
 
 
 ## Installing
 
-Install `libdiscover.so` with the following commands:
+On Linux install `libdiscover.so` with the following commands:
 
 ``` bash
 make install
@@ -53,11 +51,10 @@ This library is compatible with [discover](https://github.com/wankdanker/node-di
 ## Examples
 
 Build examples with the following commands:
+
 ``` bash
-mkdir build
-cd build
-cmake -DENABLE_DISCOVER_EXAMPLES=ON .
-make
+cmake -B build -DENABLE_DISCOVER_EXAMPLES=ON .
+cmake --build build
 ```
 
 ### Basic / Basic Self / Basic Advertise

@@ -33,9 +33,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <unistd.h>
 #include <assert.h>
+#if defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32)
+#include <windows.h>
+#else
+#include <unistd.h>
 #include <pthread.h>
+#endif
 #include <regex.h>
 #include <uuid4.h>
 #include <cJSON.h>
@@ -43,6 +47,22 @@
 
 #include "discover.h"
 #include "sock.h"
+
+/******************************************************************************/
+/* Definitions                                                                */
+/******************************************************************************/
+
+#ifdef __WINDOWS__
+#define SEM_INIT(sem)  sem = CreateSemaphore(NULL, 1, 1, NULL)
+#define SEM_WAIT(sem)  WaitForSingleObject(sem, INFINITE)
+#define SEM_POST(sem)  ReleaseSemaphore(sem, 1, NULL)
+#define SEM_CLOSE(sem) CloseHandle(sem)
+#else
+#define SEM_INIT(sem)  sem_init(&sem, 0, 1)
+#define SEM_WAIT(sem)  sem_wait(&sem)
+#define SEM_POST(sem)  sem_post(&sem)
+#define SEM_CLOSE(sem) sem_close(&sem)
+#endif
 
 /******************************************************************************/
 /* Prototypes                                                                 */
@@ -214,13 +234,13 @@ discover_create(void) {
     discover->is_master_eligible = true;
 
     /* Initialize semaphore used to access nodes */
-    sem_init(&discover->nodes.sem, 0, 1);
+    SEM_INIT(discover->nodes.sem);
 
     /* Initialize semaphore used to access channels */
-    sem_init(&discover->channels.sem, 0, 1);
+    SEM_INIT(discover->channels.sem);
 
     /* Initialize semaphore used to access options */
-    sem_init(&discover->options.sem, 0, 1);
+    SEM_INIT(discover->options.sem);
 
     /* Register message and error callbacks */
     sock_on(discover->sock, "message", &discover_message_cb, discover);
@@ -246,7 +266,7 @@ discover_set_option(discover_t *discover, char *option, void *value) {
     int ret = -1;
 
     /* Wait options semaphore */
-    sem_wait(&discover->options.sem);
+    SEM_WAIT(discover->options.sem);
 
     /* Treatment depending of the option */
     if (!strcmp("helloInterval", option)) {
@@ -351,7 +371,7 @@ discover_set_option(discover_t *discover, char *option, void *value) {
     }
 
     /* Release options semaphore */
-    sem_post(&discover->options.sem);
+    SEM_POST(discover->options.sem);
 
     return ret;
 }
@@ -367,7 +387,7 @@ discover_start(discover_t *discover) {
     assert(NULL != discover);
 
     /* Wait options semaphore */
-    sem_wait(&discover->options.sem);
+    SEM_WAIT(discover->options.sem);
 
     /* Bind socket */
     if (NULL != discover->options.unicast) {
@@ -386,7 +406,7 @@ discover_start(discover_t *discover) {
     /* Start periodic "check" task */
     if (0 != discover_start_check(discover)) {
         /* Unable to start task */
-        sem_post(&discover->options.sem);
+        SEM_POST(discover->options.sem);
         return -1;
     }
 
@@ -394,13 +414,13 @@ discover_start(discover_t *discover) {
     if (false == discover->options.client) {
         if (0 != discover_start_hello(discover)) {
             /* Unable to start task */
-            sem_post(&discover->options.sem);
+            SEM_POST(discover->options.sem);
             return -1;
         }
     }
 
     /* Release options semaphore */
-    sem_post(&discover->options.sem);
+    SEM_POST(discover->options.sem);
 
     return 0;
 }
@@ -464,7 +484,7 @@ discover_advertise(discover_t *discover, cJSON *advertisement) {
     assert(NULL != discover);
 
     /* Wait options semaphore */
-    sem_wait(&discover->options.sem);
+    SEM_WAIT(discover->options.sem);
 
     /* Set advertisement */
     if (NULL != discover->options.advertisement) {
@@ -473,7 +493,7 @@ discover_advertise(discover_t *discover, cJSON *advertisement) {
     discover->options.advertisement = (NULL != advertisement) ? cJSON_Duplicate(advertisement, 1) : NULL;
 
     /* Release options semaphore */
-    sem_post(&discover->options.sem);
+    SEM_POST(discover->options.sem);
 
     return 0;
 }
@@ -529,7 +549,7 @@ discover_join(discover_t *discover, char *event, void *fct, void *user) {
     discover_channel_t *last_channel = NULL;
 
     /* Wait semaphore */
-    sem_wait(&discover->channels.sem);
+    SEM_WAIT(discover->channels.sem);
 
     /* Parse channels, update callback and user data if event is found */
     discover_channel_t *curr_channel = discover->channels.first;
@@ -569,7 +589,7 @@ discover_join(discover_t *discover, char *event, void *fct, void *user) {
 LEAVE:
 
     /* Release semaphore */
-    sem_post(&discover->channels.sem);
+    SEM_POST(discover->channels.sem);
 
     return ret;
 }
@@ -589,7 +609,7 @@ discover_leave(discover_t *discover, char *event) {
     discover_channel_t *last_channel = NULL;
 
     /* Wait semaphore */
-    sem_wait(&discover->channels.sem);
+    SEM_WAIT(discover->channels.sem);
 
     /* Parse channels, remove channel if event is found */
     discover_channel_t *curr_channel = discover->channels.first;
@@ -611,7 +631,7 @@ discover_leave(discover_t *discover, char *event) {
 LEAVE:
 
     /* Release semaphore */
-    sem_post(&discover->channels.sem);
+    SEM_POST(discover->channels.sem);
 
     return 0;
 }
@@ -638,7 +658,7 @@ discover_send(discover_t *discover, char *event, cJSON *data) {
     }
 
     /* Wait options semaphore */
-    sem_wait(&discover->options.sem);
+    SEM_WAIT(discover->options.sem);
 
     /* Add fields to the message */
     cJSON_AddStringToObject(msg, "event", event);
@@ -648,7 +668,7 @@ discover_send(discover_t *discover, char *event, cJSON *data) {
     cJSON_AddItemToObject(msg, "data", cJSON_Duplicate(data, 1));
 
     /* Release options semaphore */
-    sem_post(&discover->options.sem);
+    SEM_POST(discover->options.sem);
 
     /* Print to string */
     char *str = cJSON_PrintUnformatted(msg);
@@ -687,7 +707,7 @@ discover_release(discover_t *discover) {
         pthread_join(discover->thread_check, NULL);
 
         /* Release channels */
-        sem_wait(&discover->channels.sem);
+        SEM_WAIT(discover->channels.sem);
         discover_channel_t *curr_channel = discover->channels.first;
         while (NULL != curr_channel) {
             discover_channel_t *tmp = curr_channel;
@@ -697,11 +717,11 @@ discover_release(discover_t *discover) {
             }
             free(tmp);
         }
-        sem_post(&discover->channels.sem);
-        sem_close(&discover->channels.sem);
+        SEM_POST(discover->channels.sem);
+        SEM_CLOSE(discover->channels.sem);
 
         /* Release nodes */
-        sem_wait(&discover->nodes.sem);
+        SEM_WAIT(discover->nodes.sem);
         discover_node_t *node = discover->nodes.first;
         while (NULL != node) {
             discover_node_t *tmp = node;
@@ -726,8 +746,8 @@ discover_release(discover_t *discover) {
             }
             free(tmp);
         }
-        sem_post(&discover->nodes.sem);
-        sem_close(&discover->nodes.sem);
+        SEM_POST(discover->nodes.sem);
+        SEM_CLOSE(discover->nodes.sem);
 
         /* Release UUIDs */
         if (NULL != discover->pid) {
@@ -738,7 +758,7 @@ discover_release(discover_t *discover) {
         }
 
         /* Release options */
-        sem_wait(&discover->options.sem);
+        SEM_WAIT(discover->options.sem);
         if (NULL != discover->options.address) {
             free(discover->options.address);
         }
@@ -760,8 +780,8 @@ discover_release(discover_t *discover) {
         if (NULL != discover->options.hostname) {
             free(discover->options.hostname);
         }
-        sem_post(&discover->options.sem);
-        sem_close(&discover->options.sem);
+        SEM_POST(discover->options.sem);
+        SEM_CLOSE(discover->options.sem);
 
         /* Release discover instance */
         free(discover);
@@ -817,7 +837,7 @@ discover_thread_hello(void *arg) {
             if (NULL != is_master_eligible) {
                 cJSON_AddItemToObject(data, "isMasterEligible", is_master_eligible);
             }
-            sem_wait(&discover->options.sem);
+            SEM_WAIT(discover->options.sem);
             cJSON_AddNumberToObject(data, "weight", discover->options.weight);
             if (NULL != discover->options.address) {
                 cJSON_AddStringToObject(data, "address", discover->options.address);
@@ -825,7 +845,7 @@ discover_thread_hello(void *arg) {
             if (NULL != discover->options.advertisement) {
                 cJSON_AddItemToObject(data, "advertisement", cJSON_Duplicate(discover->options.advertisement, 1));
             }
-            sem_post(&discover->options.sem);
+            SEM_POST(discover->options.sem);
 
             /* Send message */
             discover_send(discover, "hello", data);
@@ -840,13 +860,13 @@ discover_thread_hello(void *arg) {
         }
 
         /* Wait options semaphore */
-        sem_wait(&discover->options.sem);
+        SEM_WAIT(discover->options.sem);
 
         /* Retrieve hello interval value */
         int hello_interval = discover->options.hello_interval;
 
         /* Release options semaphore */
-        sem_post(&discover->options.sem);
+        SEM_POST(discover->options.sem);
 
         /* Sleep until the next loop */
         usleep(hello_interval * 1000);
@@ -899,8 +919,8 @@ discover_thread_check(void *arg) {
         bool masters_eligible_higher_weight_found = false;
 
         /* Wait semaphores */
-        sem_wait(&discover->nodes.sem);
-        sem_wait(&discover->options.sem);
+        SEM_WAIT(discover->nodes.sem);
+        SEM_WAIT(discover->options.sem);
 
         /* Parse all nodes in the list */
         discover_node_t *node = discover->nodes.first;
@@ -993,8 +1013,8 @@ discover_thread_check(void *arg) {
         int check_interval = discover->options.check_interval;
 
         /* Release semaphores */
-        sem_post(&discover->options.sem);
-        sem_post(&discover->nodes.sem);
+        SEM_POST(discover->options.sem);
+        SEM_POST(discover->nodes.sem);
 
         /* Sleep until the next loop */
         usleep(check_interval * 1000);
@@ -1032,18 +1052,18 @@ discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t 
     }
 
     /* Wait options semaphore */
-    sem_wait(&discover->options.sem);
+    SEM_WAIT(discover->options.sem);
 
     /* Check Process UUID */
     cJSON *pid = cJSON_GetObjectItemCaseSensitive(json, "pid");
     if ((NULL == pid) || (!cJSON_IsString(pid))) {
         /* No Process UUID, ignore message */
-        sem_post(&discover->options.sem);
+        SEM_POST(discover->options.sem);
         goto END;
     } else {
         if ((true == discover->options.ignore_process) && (!strcmp(cJSON_GetStringValue(pid), discover->pid))) {
             /* Ignore this message */
-            sem_post(&discover->options.sem);
+            SEM_POST(discover->options.sem);
             goto END;
         }
     }
@@ -1052,18 +1072,18 @@ discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t 
     cJSON *iid = cJSON_GetObjectItemCaseSensitive(json, "iid");
     if ((NULL == iid) || (!cJSON_IsString(iid))) {
         /* No Instance UUID, ignore message */
-        sem_post(&discover->options.sem);
+        SEM_POST(discover->options.sem);
         goto END;
     } else {
         if ((true == discover->options.ignore_instance) && (!strcmp(cJSON_GetStringValue(iid), discover->iid))) {
             /* Ignore this message */
-            sem_post(&discover->options.sem);
+            SEM_POST(discover->options.sem);
             goto END;
         }
     }
 
     /* Release options semaphore */
-    sem_post(&discover->options.sem);
+    SEM_POST(discover->options.sem);
 
     /* Retrieve event */
     cJSON *event = cJSON_GetObjectItemCaseSensitive(json, "event");
@@ -1111,7 +1131,7 @@ discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t 
                 bool was_master = false;
 
                 /* Wait semaphore */
-                sem_wait(&discover->nodes.sem);
+                SEM_WAIT(discover->nodes.sem);
 
                 /* Search node in the list */
                 discover_node_t *node = discover->nodes.first;
@@ -1195,7 +1215,7 @@ discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t 
                 }
 
                 /* Release semaphore */
-                sem_post(&discover->nodes.sem);
+                SEM_POST(discover->nodes.sem);
 
                 /* Invoke helloReceived callback if defined */
                 if (NULL != discover->cb.hello_received.fct) {
@@ -1208,7 +1228,7 @@ discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t 
             /* Other event, check channels */
 
             /* Wait channels semaphore */
-            sem_wait(&discover->channels.sem);
+            SEM_WAIT(discover->channels.sem);
 
             /* Invoke channel callback(s) if defined */
             if (NULL != discover->channels.first) {
@@ -1231,7 +1251,7 @@ discover_message_cb(sock_t *sock, char *ip, uint16_t port, void *buffer, size_t 
             }
 
             /* Release channels semaphore */
-            sem_post(&discover->channels.sem);
+            SEM_POST(discover->channels.sem);
         }
     }
 

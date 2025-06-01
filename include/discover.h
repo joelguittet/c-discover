@@ -56,8 +56,8 @@ then using the DISCOVER_API_VISIBILITY flag to "export" the same symbols the way
 
 */
 
-#define DISCOVER_CDECL   __cdecl
-#define DISCOVER_STDCALL __stdcall
+#define DISCOVER_CDECL __cdecl
+#define DISCOVER_STDCALL
 
 /* export symbols by default, this is necessary for copy pasting the C and header file */
 #if !defined(DISCOVER_HIDE_SYMBOLS) && !defined(DISCOVER_IMPORT_SYMBOLS) && !defined(DISCOVER_EXPORT_SYMBOLS)
@@ -88,7 +88,11 @@ then using the DISCOVER_API_VISIBILITY flag to "export" the same symbols the way
 
 #include <stdint.h>
 #include <stdbool.h>
+#ifdef __WINDOWS__
+#include <windows.h>
+#else
 #include <semaphore.h>
+#endif
 #include <cJSON.h>
 
 /******************************************************************************/
@@ -147,7 +151,11 @@ typedef struct discover_s {
         bool   ignore_instance; /* If set to false, will not ignore messages from self (on non-reserved channels) */
         cJSON *advertisement;   /* The initial advertisement which is sent with each hello packet */
         char  *hostname;        /* Override the OS hostname with a custom value */
-        sem_t  sem;             /* Semaphore used to protect options */
+#ifdef __WINDOWS__
+        HANDLE sem; /* Semaphore used to protect options */
+#else
+        sem_t sem; /* Semaphore used to protect options */
+#endif
     } options;
     sock_t   *sock;               /* Sock instance */
     pthread_t thread_check;       /* Check thread handle */
@@ -159,11 +167,19 @@ typedef struct discover_s {
     struct {
         discover_node_t *first; /* First node of the daisy chain */
         discover_node_t *last;  /* Last node of the daisy chain */
-        sem_t            sem;   /* Semaphore used to protect daisy chain */
+#ifdef __WINDOWS__
+        HANDLE sem; /* Semaphore used to protect daisy chain */
+#else
+        sem_t sem; /* Semaphore used to protect daisy chain */
+#endif
     } nodes;
     struct {
         discover_channel_t *first; /* Event channel daisy chain */
-        sem_t               sem;   /* Semaphore used to protect daisy chain */
+#ifdef __WINDOWS__
+        HANDLE sem; /* Semaphore used to protect daisy chain */
+#else
+        sem_t sem; /* Semaphore used to protect daisy chain */
+#endif
     } channels;
     struct {
         struct {
