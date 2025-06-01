@@ -4,7 +4,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2021-2023 joelguittet and c-discover contributors
+ * Copyright joelguittet and c-discover contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -99,17 +99,17 @@ then using the DISCOVER_API_VISIBILITY flag to "export" the same symbols the way
 typedef struct discover_node_s {
     struct discover_node_s *prev;      /* Previous node */
     struct discover_node_s *next;      /* Next node */
-    char *                  pid;       /* Process UUID of the node */
-    char *                  iid;       /* Instance UUID of the node */
-    char *                  hostname;  /* Hostname of the node */
-    char *                  address;   /* Address of the node */
+    char                   *pid;       /* Process UUID of the node */
+    char                   *iid;       /* Instance UUID of the node */
+    char                   *hostname;  /* Hostname of the node */
+    char                   *address;   /* Address of the node */
     uint16_t                port;      /* Port of the node */
     time_t                  last_seen; /* Last time the node has been seen */
     struct {
         bool   is_master;          /* true if the node is master, false otherwise */
         bool   is_master_eligible; /* true if the node is master eligible, false otherwise */
         double weight;             /* Weight of the node */
-        char * address;            /* Address on which the node bound */
+        char  *address;            /* Address on which the node bound */
         cJSON *advertisement;      /* Advestisement object */
     } data;
 } discover_node_t;
@@ -118,7 +118,7 @@ typedef struct discover_node_s {
 struct discover_s;
 typedef struct discover_channel_s {
     struct discover_channel_s *next;                            /* Next channel */
-    char *                     event;                           /* Event of the channel */
+    char                      *event;                           /* Event of the channel */
     void *(*fct)(struct discover_s *, char *, cJSON *, void *); /* Callback function invoked when event is received */
     void *user;                                                 /* User data passed to the callback */
 } discover_channel_t;
@@ -131,14 +131,14 @@ typedef struct discover_s {
         int           check_interval; /* How often to to check for missing nodes in milliseconds */
         int           node_timeout;   /* Consider a node dead if not seen in this many milliseconds */
         int           master_timeout; /* Consider a master node dead if not seen in this many milliseconds */
-        char *        address;        /* Address to bind to */
+        char         *address;        /* Address to bind to */
         uint16_t      port;           /* Port on which to bind and communicate with other node-discover processes */
-        char *        broadcast;      /* Broadcast address if using broadcast */
-        char *        multicast;      /* Multicast address if using multicast - If net set, broadcast or unicast is used */
+        char         *broadcast;      /* Broadcast address if using broadcast */
+        char         *multicast;      /* Multicast address if using multicast - If net set, broadcast or unicast is used */
         unsigned char multicast_ttl;  /* Multicast TTL for when using multicast */
         char *
-               unicast; /* Comma separated string of Unicast addresses of known nodes - It is advised to specify the address of the local interface when using unicast and expecting local discovery to work*/
-        char * key;     /* Encryption key if your broadcast packets should be encrypted */
+            unicast; /* Comma separated string of Unicast addresses of known nodes - It is advised to specify the address of the local interface when using unicast and expecting local discovery to work*/
+        char  *key;  /* Encryption key if your broadcast packets should be encrypted */
         int    masters_required; /* The count of master processes that should always be available */
         double weight;           /* A number used to determine the preference for a specific process to become master - Higher numbers win */
         bool   client;           /* When true operate in client only mode (don't broadcast existence of node, just listen and discover) */
@@ -146,14 +146,14 @@ typedef struct discover_s {
         bool   ignore_process;  /* If set to false, will not ignore messages from other Discover instances within the same process (on non-reserved channels) */
         bool   ignore_instance; /* If set to false, will not ignore messages from self (on non-reserved channels) */
         cJSON *advertisement;   /* The initial advertisement which is sent with each hello packet */
-        char * hostname;        /* Override the OS hostname with a custom value */
+        char  *hostname;        /* Override the OS hostname with a custom value */
         sem_t  sem;             /* Semaphore used to protect options */
     } options;
-    sock_t *  sock;               /* Sock instance */
+    sock_t   *sock;               /* Sock instance */
     pthread_t thread_check;       /* Check thread handle */
     pthread_t thread_hello;       /* Hello thread handle */
-    char *    pid;                /* Process UUID */
-    char *    iid;                /* Instance UUID */
+    char     *pid;                /* Process UUID */
+    char     *iid;                /* Instance UUID */
     bool      is_master;          /* true if master, false otherwise */
     bool      is_master_eligible; /* true if master eligible, false otherwise */
     struct {
