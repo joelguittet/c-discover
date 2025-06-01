@@ -4,7 +4,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2021-2023 joelguittet and c-discover contributors
+ * Copyright joelguittet and c-discover contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -423,7 +423,7 @@ sock_thread_listenner(void *arg) {
 
     /* Retrieve worker */
     sock_worker_t *worker = (sock_worker_t *)arg;
-    sock_t *       sock   = worker->parent;
+    sock_t        *sock   = worker->parent;
 
     /* Create new SOCK_DGRAM socket */
     worker->type.listenner.socket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -577,7 +577,7 @@ sock_thread_messenger(void *arg) {
 
     /* Retrieve worker */
     sock_worker_t *worker = (sock_worker_t *)arg;
-    sock_t *       sock   = worker->parent;
+    sock_t        *sock   = worker->parent;
 
     /* Check if message callback is define */
     if (NULL != sock->cb.message.fct) {
@@ -609,7 +609,7 @@ sock_thread_sender(void *arg) {
 
     /* Retrieve worker */
     sock_worker_t *worker = (sock_worker_t *)arg;
-    sock_t *       sock   = worker->parent;
+    sock_t        *sock   = worker->parent;
 
     /* Wait semaphore */
     sem_wait(&sock->clients.sem);
