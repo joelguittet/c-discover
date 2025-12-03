@@ -39,10 +39,16 @@ list(GET PROJECT_VER_LIST 2 PROJECT_VER_PATCH)
 # Use GNU installation directories
 include(GNUInstallDirs)
 
+# Import CHECK_C_COMPILER_FLAG
+include(CheckCCompilerFlag)
+
 # Additional flags
 set(c_flags "${c_flags} -Os -ffunction-sections -Wall -fPIC")
 set(linker_flags "${linker_flags} -Wl,-gc-sections")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+CHECK_C_COMPILER_FLAG("fvisibility" "FLAG_SUPPORTED_FVISIBILITY")
+if (FLAG_SUPPORTED_FVISIBILITY)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+endif()
 
 # Definitions
 add_definitions(-DDISCOVER_EXPORT_SYMBOLS -DDISCOVER_API_VISIBILITY)
@@ -69,7 +75,13 @@ endif()
 add_library(discover SHARED ${src})
 
 # Link the library with the wanted libraries
-target_link_libraries(discover cjson pthread m)
+target_link_libraries(discover cjson m)
+find_package(Threads REQUIRED)
+if (Threads_FOUND)
+    if (CMAKE_USE_PTHREADS_INIT)
+        target_link_libraries(discover pthread)
+    endif()
+endif()
 
 # Properties of the library
 set_target_properties(discover

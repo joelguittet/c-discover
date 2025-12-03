@@ -38,7 +38,11 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#if defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32)
+#include <windows.h>
+#else
 #include <semaphore.h>
+#endif
 
 /******************************************************************************/
 /* Definitions                                                                */
@@ -73,7 +77,11 @@ typedef struct sock_worker_s {
 typedef struct {
     sock_worker_t *first; /* First worker of the daisy chain */
     sock_worker_t *last;  /* Last worker of the daisy chain */
-    sem_t          sem;   /* Semaphore used to protect daisy chain */
+#ifdef __WINDOWS__
+    HANDLE sem; /* Semaphore used to protect daisy chain */
+#else
+    sem_t sem; /* Semaphore used to protect daisy chain */
+#endif
 } sock_worker_list_t;
 
 /* Sock instance structure */
@@ -93,7 +101,11 @@ typedef struct sock_s {
     sock_worker_list_t senders;    /* List of senders */
     struct {
         fd_set fds; /* All clients sockets */
-        sem_t  sem; /* Semaphore used to protect clients */
+#ifdef __WINDOWS__
+        HANDLE sem; /* Semaphore used to protect clients */
+#else
+        sem_t sem; /* Semaphore used to protect clients */
+#endif
     } clients;
     struct {
         struct {

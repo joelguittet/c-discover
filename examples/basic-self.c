@@ -31,7 +31,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#if !defined(WIN32) && !defined(WIN64) && !defined(_MSC_VER) && !defined(_WIN32)
 #include <unistd.h>
+#endif
 #include <assert.h>
 #include <signal.h>
 #include <pthread.h>

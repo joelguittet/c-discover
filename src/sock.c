@@ -33,16 +33,36 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>
 #include <assert.h>
+#if defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32)
+#include <windows.h>
+#else
+#include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <semaphore.h>
 #include <pthread.h>
+#endif
 
 #include "sock.h"
+
+/******************************************************************************/
+/* Definitions                                                                */
+/******************************************************************************/
+
+#ifdef __WINDOWS__
+#define SEM_INIT(sem)  sem = CreateSemaphore(NULL, 1, 1, NULL)
+#define SEM_WAIT(sem)  WaitForSingleObject(sem, INFINITE)
+#define SEM_POST(sem)  ReleaseSemaphore(sem, 1, NULL)
+#define SEM_CLOSE(sem) CloseHandle(sem)
+#else
+#define SEM_INIT(sem)  sem_init(&sem, 0, 1)
+#define SEM_WAIT(sem)  sem_wait(&sem)
+#define SEM_POST(sem)  sem_post(&sem)
+#define SEM_CLOSE(sem) sem_close(&sem)
+#endif
 
 /******************************************************************************/
 /* Prototypes                                                                 */
@@ -108,16 +128,16 @@ sock_create(void) {
     memset(sock, 0, sizeof(sock_t));
 
     /* Initialize semaphore used to access listenners */
-    sem_init(&sock->listenners.sem, 0, 1);
+    SEM_INIT(sock->listenners.sem);
 
     /* Initialize semaphore used to access messengers */
-    sem_init(&sock->messengers.sem, 0, 1);
+    SEM_INIT(sock->messengers.sem);
 
     /* Initialize semaphore used to access senders */
-    sem_init(&sock->senders.sem, 0, 1);
+    SEM_INIT(sock->senders.sem);
 
     /* Initialize clients FDs and semaphore */
-    sem_init(&sock->clients.sem, 0, 1);
+    SEM_INIT(sock->clients.sem);
     FD_ZERO(&sock->clients.fds);
 
     return sock;
@@ -344,7 +364,7 @@ sock_release(sock_t *sock) {
     if (NULL != sock) {
 
         /* Release listenners */
-        sem_wait(&sock->listenners.sem);
+        SEM_WAIT(sock->listenners.sem);
         sock_worker_t *worker = sock->listenners.first;
         while (NULL != worker) {
             sock_worker_t *tmp = worker;
@@ -358,11 +378,11 @@ sock_release(sock_t *sock) {
             }
             free(tmp);
         }
-        sem_post(&sock->listenners.sem);
-        sem_close(&sock->listenners.sem);
+        SEM_POST(sock->listenners.sem);
+        SEM_CLOSE(sock->listenners.sem);
 
         /* Release messengers */
-        sem_wait(&sock->messengers.sem);
+        SEM_WAIT(sock->messengers.sem);
         worker = sock->messengers.first;
         while (NULL != worker) {
             sock_worker_t *tmp = worker;
@@ -372,11 +392,11 @@ sock_release(sock_t *sock) {
             free(tmp->type.messenger.buffer);
             free(tmp);
         }
-        sem_post(&sock->messengers.sem);
-        sem_close(&sock->messengers.sem);
+        SEM_POST(sock->messengers.sem);
+        SEM_CLOSE(sock->messengers.sem);
 
         /* Release senders */
-        sem_wait(&sock->senders.sem);
+        SEM_WAIT(sock->senders.sem);
         worker = sock->senders.first;
         while (NULL != worker) {
             sock_worker_t *tmp = worker;
@@ -386,11 +406,11 @@ sock_release(sock_t *sock) {
             free(tmp->type.sender.buffer);
             free(tmp);
         }
-        sem_post(&sock->senders.sem);
-        sem_close(&sock->senders.sem);
+        SEM_POST(sock->senders.sem);
+        SEM_CLOSE(sock->senders.sem);
 
         /* Release clients semaphore */
-        sem_close(&sock->clients.sem);
+        SEM_CLOSE(sock->clients.sem);
 
         /* Release options */
         if (NULL != sock->options.address) {
@@ -437,9 +457,9 @@ sock_thread_listenner(void *arg) {
 
     /* Add myself to the FDs */
     FD_SET(worker->type.listenner.socket, &worker->type.listenner.fds);
-    sem_wait(&sock->clients.sem);
+    SEM_WAIT(sock->clients.sem);
     FD_SET(worker->type.listenner.socket, &sock->clients.fds);
-    sem_post(&sock->clients.sem);
+    SEM_POST(sock->clients.sem);
 
     /* Set socket options */
     if (NULL != sock->options.broadcast) {
@@ -612,7 +632,7 @@ sock_thread_sender(void *arg) {
     sock_t        *sock   = worker->parent;
 
     /* Wait semaphore */
-    sem_wait(&sock->clients.sem);
+    SEM_WAIT(sock->clients.sem);
 
     /* Send data to all clients sockets depending of the configuration */
     if (NULL != sock->options.unicast) {
@@ -674,7 +694,7 @@ sock_thread_sender(void *arg) {
     }
 
     /* Release semaphore */
-    sem_post(&sock->clients.sem);
+    SEM_POST(sock->clients.sem);
 
     /* Remove worker from senders */
     sock_remove_worker(sock, &sock->senders, worker);
@@ -698,7 +718,7 @@ static int
 sock_start_worker(sock_t *sock, sock_worker_list_t *list, sock_worker_t *worker, void *(*start_routine)(void *)) {
 
     /* Wait semaphore */
-    sem_wait(&list->sem);
+    SEM_WAIT(list->sem);
 
     /* Store sock parent instance */
     worker->parent = sock;
@@ -711,7 +731,7 @@ sock_start_worker(sock_t *sock, sock_worker_list_t *list, sock_worker_t *worker,
     /* Start thread */
     if (0 != pthread_create(&worker->thread, &attr, start_routine, (void *)worker)) {
         /* Unable to start the thread */
-        sem_post(&list->sem);
+        SEM_POST(list->sem);
         return -1;
     }
 
@@ -725,7 +745,7 @@ sock_start_worker(sock_t *sock, sock_worker_list_t *list, sock_worker_t *worker,
     }
 
     /* Release semaphore */
-    sem_post(&list->sem);
+    SEM_POST(list->sem);
 
     return 0;
 }
@@ -743,7 +763,7 @@ sock_remove_worker(sock_t *sock, sock_worker_list_t *list, sock_worker_t *worker
     (void)sock;
 
     /* Wait semaphore */
-    sem_wait(&list->sem);
+    SEM_WAIT(list->sem);
 
     /* Remove the worker from the daisy chain */
     if (NULL != worker->prev) {
@@ -758,7 +778,7 @@ sock_remove_worker(sock_t *sock, sock_worker_list_t *list, sock_worker_t *worker
     }
 
     /* Release semaphore */
-    sem_post(&list->sem);
+    SEM_POST(list->sem);
 
     return 0;
 }
