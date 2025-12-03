@@ -1,6 +1,7 @@
 # c-discover
 
-[![CI Badge](https://github.com/joelguittet/c-discover/workflows/ci/badge.svg)](https://github.com/joelguittet/c-discover/actions)
+[![Workflow check-code-format Badge](https://github.com/joelguittet/c-discover/workflows/check-code-format/badge.svg)](https://github.com/joelguittet/c-discover/actions)
+[![Workflow build Badge](https://github.com/joelguittet/c-discover/workflows/build/badge.svg)](https://github.com/joelguittet/c-discover/actions)
 [![Issues Badge](https://img.shields.io/github/issues/joelguittet/c-discover)](https://github.com/joelguittet/c-discover/issues)
 [![License Badge](https://img.shields.io/github/license/joelguittet/c-discover)](https://github.com/joelguittet/c-discover/blob/master/LICENSE)
 

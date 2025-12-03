@@ -1,6 +1,5 @@
-#!/bin/bash
-# @file      build.sh
-# @brief     Build library and examples
+# @file      build.yml
+# @brief     Used to build library and example
 #
 # MIT License
 #
@@ -24,5 +23,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake -B build -DENABLE_DISCOVER_EXAMPLES=ON .
-cmake --build build -j$(nproc)
+name: build
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    steps:
+      # Checkout c-discover
+      - name: Checkout c-discover
+        uses: actions/checkout@v5
+        with:
+          path: c-discover
+
+      # Checkout submodules
+      - name: Checkout submodules
+        working-directory: c-discover
+        run: git submodule update --init --recursive
+
+      # Check code format
+      - name: Check headers
+        if: ${{ always() }}
+        working-directory: c-discover
+        run: |
+          cmake -B build -DENABLE_DISCOVER_EXAMPLES=ON .
+          cmake --build build -j$(nproc)
